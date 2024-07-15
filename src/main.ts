@@ -8,6 +8,10 @@ async function run(): Promise<void> {
     core.getInput('review_turnaround_hours'),
     10
   )
+  const reviewRollingReminderHours = parseInt(
+    core.getInput('review_rolling_reminder_hours'),
+    10
+  )
 
   try {
     const {data: pullRequests} = await octokit.pulls.list({
@@ -66,13 +70,13 @@ async function run(): Promise<void> {
         continue
       }
 
-      const pullRequestCreatedAt =
+      const pullRequestReviewCreatedAt =
         pullRequestResponse.repository.pullRequest.timelineItems.nodes[0]
           .createdAt
 
       const currentTime = new Date().getTime()
       const reviewByTime =
-        new Date(pullRequestCreatedAt).getTime() +
+        new Date(pullRequestReviewCreatedAt).getTime() +
         1000 * 60 * 60 * reviewTurnaroundHours
 
       core.info(`currentTime: ${currentTime} reviewByTime: ${reviewByTime}`)
@@ -96,9 +100,28 @@ async function run(): Promise<void> {
             return node.body.match(RegExp(reminderMessage)) != null
           }
         ).length > 0
+      
+      let shouldRemindAgain = false
+      
+      if (hasReminderComment) {
+        const reminderComments = pullRequestResponse.repository.pullRequest.comments.nodes.filter(
+          node => {
+            return node.body.match(RegExp(reminderMessage)) != null
+          }
+        )
+        const lastReminderComment = reminderComments[reminderComments.length-1]
+
+        const remindByTime =
+          new Date(lastReminderComment).getTime() +
+          1000 * 60 * 60 * reviewRollingReminderHours
+
+        if (currentTime < remindByTime) {
+          shouldRemindAgain = true
+        }
+      }
 
       core.info(`hasReminderComment: ${hasReminderComment}`)
-      if (hasReminderComment) {
+      if (hasReminderComment && !shouldRemindAgain) {
         continue
       }
 
