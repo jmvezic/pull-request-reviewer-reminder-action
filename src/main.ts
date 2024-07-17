@@ -100,19 +100,20 @@ async function run(): Promise<void> {
             return node.body.match(RegExp(reminderMessage)) != null
           }
         ).length > 0
-      
+
       let shouldRemindAgain = false
-      
+
       if (hasReminderComment) {
         const reminderComments = pullRequestResponse.repository.pullRequest.comments.nodes.filter(
           node => {
             return node.body.match(RegExp(reminderMessage)) != null
           }
         )
-        const lastReminderComment = reminderComments[reminderComments.length-1]
+        const lastReminderComment =
+          reminderComments[reminderComments.length - 1]
 
         const remindByTime =
-          new Date(lastReminderComment).getTime() +
+          new Date(lastReminderComment.createdAt).getTime() +
           1000 * 60 * 60 * reviewRollingReminderHours
 
         if (currentTime < remindByTime) {
@@ -152,6 +153,7 @@ interface PullRequestResponse {
       comments: {
         nodes: {
           body: string
+          createdAt: string
         }[]
       }
     }
