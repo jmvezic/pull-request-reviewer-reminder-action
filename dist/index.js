@@ -48,6 +48,8 @@ function run() {
             const { data: pullRequests } = yield octokit.pulls.list(Object.assign(Object.assign({}, github.context.repo), { state: 'open' }));
             for (const pr of pullRequests) {
                 core.info(`pr title: ${pr.title}`);
+                core.info(`pr number: ${pr.number}`);
+                core.info(`pr id: ${pr.id}`);
                 const pullRequestResponse = yield octokit.graphql(`
         query($owner: String!, $name: String!, $number: Int!) {
           repository(owner: $owner, name: $name) {
@@ -113,11 +115,13 @@ function run() {
                     const lastReminderComment = reminderComments[reminderComments.length - 1];
                     const remindByTime = new Date(lastReminderComment.createdAt).getTime() +
                         1000 * 60 * 60 * reviewRollingReminderHours;
+                    core.info(`Remind by time: ${remindByTime}`);
                     if (currentTime < remindByTime) {
                         shouldRemindAgain = true;
                     }
                 }
                 core.info(`hasReminderComment: ${hasReminderComment}`);
+                core.info(`shouldRemindAgain: ${shouldRemindAgain}`);
                 if (hasReminderComment && !shouldRemindAgain) {
                     continue;
                 }

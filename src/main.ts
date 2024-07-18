@@ -21,6 +21,8 @@ async function run(): Promise<void> {
 
     for (const pr of pullRequests) {
       core.info(`pr title: ${pr.title}`)
+      core.info(`pr number: ${pr.number}`)
+      core.info(`pr id: ${pr.id}`)
 
       const pullRequestResponse = await octokit.graphql<PullRequestResponse>(
         `
@@ -116,12 +118,15 @@ async function run(): Promise<void> {
           new Date(lastReminderComment.createdAt).getTime() +
           1000 * 60 * 60 * reviewRollingReminderHours
 
+        core.info(`Remind by time: ${remindByTime}`)
+
         if (currentTime < remindByTime) {
           shouldRemindAgain = true
         }
       }
 
       core.info(`hasReminderComment: ${hasReminderComment}`)
+      core.info(`shouldRemindAgain: ${shouldRemindAgain}`)
       if (hasReminderComment && !shouldRemindAgain) {
         continue
       }
