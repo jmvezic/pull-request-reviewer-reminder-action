@@ -73,6 +73,7 @@ function run() {
               comments(first: 100) {
                 nodes {
                   body
+                  createdAt
                 }
               }
             }
