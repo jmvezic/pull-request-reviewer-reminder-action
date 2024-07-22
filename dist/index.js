@@ -117,7 +117,7 @@ function run() {
                     const remindByTime = new Date(lastReminderComment.createdAt).getTime() +
                         1000 * 60 * 60 * reviewRollingReminderHours;
                     core.info(`Remind by time: ${remindByTime}`);
-                    if (currentTime < remindByTime) {
+                    if (currentTime > remindByTime) {
                         shouldRemindAgain = true;
                     }
                 }

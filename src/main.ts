@@ -121,7 +121,7 @@ async function run(): Promise<void> {
 
         core.info(`Remind by time: ${remindByTime}`)
 
-        if (currentTime < remindByTime) {
+        if (currentTime > remindByTime) {
           shouldRemindAgain = true
         }
       }
