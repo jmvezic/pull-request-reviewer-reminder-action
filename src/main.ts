@@ -48,6 +48,7 @@ async function run(): Promise<void> {
               comments(first: 100) {
                 nodes {
                   body
+                  createdAt
                 }
               }
             }
