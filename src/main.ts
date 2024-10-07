@@ -1,6 +1,42 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
+function haveBusinessDaysPassed(
+  pullRequestReviewCreatedAt: number,
+  businessDays: number
+): boolean {
+  const oneDayInMs = 24 * 60 * 60 * 1000 // Milliseconds in one day
+
+  // Convert pullRequestReviewCreatedAt to milliseconds to match current time format
+  const startDate = new Date(pullRequestReviewCreatedAt * 1000)
+  const endDate = new Date() // Get the current date and time
+
+  let businessDaysCount = 0
+
+  // Loop through each day between startDate and endDate
+  let currentDate = startDate
+
+  while (currentDate < endDate) {
+    const dayOfWeek = currentDate.getDay()
+
+    // Check if it's a weekday (Monday to Friday)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      businessDaysCount++
+    }
+
+    // Stop early if we already have X business days
+    if (businessDaysCount >= businessDays) {
+      return true
+    }
+
+    // Move to the next day
+    currentDate = new Date(currentDate.getTime() + oneDayInMs)
+  }
+
+  // If less than 2 business days were found
+  return false
+}
+
 async function run(): Promise<void> {
   const octokit = github.getOctokit(core.getInput('github_token'))
   const reminderMessage = core.getInput('reminder_message')
@@ -77,13 +113,12 @@ async function run(): Promise<void> {
         pullRequestResponse.repository.pullRequest.timelineItems.nodes[0]
           .createdAt
 
-      const currentTime = new Date().getTime()
-      const reviewByTime =
-        new Date(pullRequestReviewCreatedAt).getTime() +
-        1000 * 60 * 60 * reviewTurnaroundHours
-
-      core.info(`currentTime: ${currentTime} reviewByTime: ${reviewByTime}`)
-      if (currentTime < reviewByTime) {
+      if (
+        !haveBusinessDaysPassed(
+          new Date(pullRequestReviewCreatedAt).getTime(),
+          reviewTurnaroundHours / 24
+        )
+      ) {
         continue
       }
 
@@ -115,13 +150,12 @@ async function run(): Promise<void> {
         const lastReminderComment =
           reminderComments[reminderComments.length - 1]
 
-        const remindByTime =
-          new Date(lastReminderComment.createdAt).getTime() +
-          1000 * 60 * 60 * reviewRollingReminderHours
-
-        core.info(`Remind by time: ${remindByTime}`)
-
-        if (currentTime > remindByTime) {
+        if (
+          haveBusinessDaysPassed(
+            new Date(lastReminderComment.createdAt).getTime(),
+            reviewRollingReminderHours / 24
+          )
+        ) {
           shouldRemindAgain = true
         }
       }
